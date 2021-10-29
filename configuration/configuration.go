@@ -11,7 +11,7 @@ import (
 
 //esta estructura cumple la funcion de configurar los datos de nuestra conexion con la db
 //convirtiendo los datos para que puedan ser interpretados por gorm
-type Configuration struct {
+type configuration struct {
 	Server   string
 	Port     string
 	User     string
@@ -20,8 +20,8 @@ type Configuration struct {
 }
 
 //funcion para obtener la configuracion
-func GetConfiguration() Configuration {
-	var c Configuration
+func getConfiguration() configuration {
+	var c configuration
 	//obtenemos el archivo del cual vamos a obtener los datos de conexion
 	file, err := os.Open("./config.json")
 
@@ -43,7 +43,7 @@ func GetConfiguration() Configuration {
 //funcion para realizar la conexion con la db
 func GetConection() *gorm.DB {
 	//ya obtenida la configuracion, la guardamos en una variable
-	c := GetConfiguration()
+	c := getConfiguration()
 	//dsn = data source name. En esta variable definimos como queda la url
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8&parseTime=True&loc=Local", c.User, c.Password, c.Server, c.Port, c.Database)
 	db, err := gorm.Open("mysql", dsn)
