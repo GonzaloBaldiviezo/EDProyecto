@@ -2,8 +2,11 @@ package main
 
 import (
 	"EDProyecto/migration"
+	"EDProyecto/routes"
 	"flag"
+	"github.com/urfave/negroni"
 	"log"
+	"net/http"
 )
 
 //Este archivo es el ejecutable. En este caso, vamos a crear la logica para lograr que
@@ -25,4 +28,20 @@ func main() {
 		log.Println("Finalizó la migracion")
 	}
 
+	//inicia las rutas
+	router := routes.InitRoutes()
+
+	//inicia los middlewares
+	n := negroni.Classic()
+	n.UseHandler(router)
+
+	//inicia el servidor
+	server := &http.Server{
+		Addr:    ":8080",
+		Handler: n,
+	}
+
+	log.Println("Iniciado el servidor en http://localhost:8080")
+	log.Println(server.ListenAndServe())
+	log.Println("Fin de la ejecucion del programa")
 }

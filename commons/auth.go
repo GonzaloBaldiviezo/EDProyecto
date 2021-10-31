@@ -7,17 +7,20 @@ import (
 	"log"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
+	"EDProyecto/models"
 	jwt "github.com/dgrijalva/jwt-go"
-	//"EDProyecto\EDProyecto\models"
 )
 
-var(
+var (
 	privateKey *rsa.PrivateKey
+
+	//PublicKey es exportable
 	PublicKey *rsa.PublicKey
 )
 
-func init()  {
+func init() {
+
+	//leemos los archivos private y public
 	privateBytes, err := ioutil.ReadFile("./keys/private.rsa")
 
 	if err != nil {
@@ -28,37 +31,39 @@ func init()  {
 
 	if err != nil {
 		log.Fatal("No se pudo leer el archivo publico")
+
 	}
 
+	//parseamos ambos archivos y se los asociamos a las variables creadas mas arriba
 	privateKey, err = jwt.ParseRSAPrivateKeyFromPEM(privateBytes)
-
 	if err != nil {
 		log.Fatal("No se pudo hacer el parse a privateKey")
 	}
 
-	publicKey, err = jwt.ParseRSAPublicKeyFromPEM(publicBytes)
+	PublicKey, err = jwt.ParseRSAPublicKeyFromPEM(publicBytes)
+	if err != nil {
+		log.Fatal("No se pudo hacer el parse a PublicKey")
+	}
+}
+
+//metodo exportable que firma el token
+func GenerateJWT(user models.User) string {
+	claims := models.Claim{
+		User: user,
+		StandardClaims: jwt.StandardClaims{
+			//tiempo de expiracion
+			ExpiresAt: time.Now().Add(time.Hour * 2).Unix(),
+			Issuer:    "Escuela Digital",
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
+
+	result, err := token.SignedString(privateKey)
 
 	if err != nil {
-		log.Fatal("No se pudo hacer el parse a publicKey")
+		log.Fatal("No se pudo firmar el token")
 	}
 
-	func GenerateJWT(user models.User) string {
-		claims := models.Claim{
-			User: user,
-			StandardClaims: jwt.StandardClaims{
-				ExpiresAt: time.Now().Add(time.Hour * 2).Unix(),
-				Issuer: "Escuela Digital",
-			},
-		}
-
-		token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
-
-		result, err := token.Signedtring(privateKey)
-
-		if err != nil {
-			log.Fatal("No se pudo firmar el token")
-		}
-
-		return result
-	}
+	return result
 }
