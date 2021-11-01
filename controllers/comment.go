@@ -6,10 +6,19 @@ import (
 	"EDProyecto/models"
 	"encoding/json"
 	"fmt"
+	"github.com/olahol/melody"
+	"golang.org/x/net/websocket"
 	"log"
 	"net/http"
 	"strconv"
 )
+
+//variable que permite utilizar realtime
+var Melody *melody.Melody
+
+func init() {
+	Melody = melody.New()
+}
 
 // funcionalidad para crear comentarios
 func CommentCreate(w http.ResponseWriter, r *http.Request) {
@@ -45,6 +54,37 @@ func CommentCreate(w http.ResponseWriter, r *http.Request) {
 		m.Message = fmt.Sprintf("Error al registrar el comentario: %s", err)
 		commons.DisplayMessage(w, m)
 		return
+	}
+
+	//construimos el json que va a ser enviado a otros web sockets
+	db.Model(&comment).Related(&comment.User)
+	comment.User[0].Password = ""
+
+	//controlo el error
+	j, err := json.Marshal(&comment)
+	if err != nil {
+		m.Message = fmt.Sprintf("No se pudo convertir el comentario a json: %s", err)
+		m.Code = http.StatusInternalServerError
+		commons.DisplayMessage(w, m)
+	}
+
+	//ahora le enviamos los datos a melody para que se encargue de repartirlo por todos los
+	//sockets conectados
+	origin := fmt.Sprintf("http://localhost:%d", commons.Port)
+
+	//url a la cual vamos a enviar la peticion
+	url := fmt.Sprintf("ws://localhost:%d/ws", commons.Port)
+
+	//creamos el websocket
+	ws, err := websocket.Dial(url, "", origin)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	//controlo el error en el caso de que cuando escriba el json en el websocket
+	//salte algun error
+	if _, err := ws.Write(j); err != nil {
+		log.Fatal(err)
 	}
 
 	//lanzo el mensaje de OK

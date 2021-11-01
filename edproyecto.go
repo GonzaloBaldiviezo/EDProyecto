@@ -1,9 +1,11 @@
 package main
 
 import (
+	"EDProyecto/commons"
 	"EDProyecto/migration"
 	"EDProyecto/routes"
 	"flag"
+	"fmt"
 	"github.com/urfave/negroni"
 	"log"
 	"net/http"
@@ -19,6 +21,11 @@ func main() {
 
 	//uso un flag para definir el comando de consola migrate y sus parametros
 	flag.StringVar(&migrate, "migrate", "no", "Genera la migracion a la DB")
+
+	//uso un flag para definir el puerto que voy a usar para levantar el servidor (en el caso en que
+	//el puerto 8080 este siendo usado)
+	flag.IntVar(&commons.Port, "port", 8080, "Puerto para el servidor web")
+
 	flag.Parse()
 
 	//si la variable migrate tiene el valor yes, entonces que comience la migracion
@@ -37,11 +44,11 @@ func main() {
 
 	//inicia el servidor
 	server := &http.Server{
-		Addr:    ":8080",
+		Addr:    fmt.Sprintf(":%d", commons.Port),
 		Handler: n,
 	}
 
-	log.Println("Iniciado el servidor en http://localhost:8080")
+	log.Printf("Iniciado el servidor en http://localhost:%d", commons.Port)
 	log.Println(server.ListenAndServe())
 	log.Println("Fin de la ejecucion del programa")
 }
